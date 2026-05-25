@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1779731406 source:c:\users\finni\onedrive\documents\c projects\delivery_system\main.c
+	<stdio.h>
+	"product.h"
+
+1779729155 c:\users\finni\onedrive\documents\c projects\delivery_system\product.h
+
+1779731262 source:c:\users\finni\onedrive\documents\c projects\delivery_system\product.c
+	"product.h"
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+

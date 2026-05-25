@@ -1,0 +1,27 @@
+Electronics
+Laptop_1, 1200.00, 5
+Laptop_2, 600.00, 10
+Smartphone_1, 200.00, 20
+Smartphone_2, 800.00, 10
+Headphones_1, 250.00, 15
+Headphones_2, 30.00, -1
+
+Clothing
+Tshirt_1, 20.00, 30
+Jeans_1, 50.00, 15
+
+Food
+Chocolate, 3.00, 100
+Coffee, 5.00, -1
+
+Sports
+Yoga_Mat, 25.00, 20
+Sunglasses, 15.00, 30
+Running_Shoes, 80.00, 12
+Water_Bottle, 10.00, -1
+
+Books
+Roadside_Picnic, 35.00, 10
+Norwegian_Wood, 12.00, -1
+The_C_Programming_Language, 40.00, 8
+The_Fellowship_Of_The_Ring, 15.00, 25
