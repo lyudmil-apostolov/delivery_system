@@ -14,7 +14,7 @@ typedef struct {
 int loadProducts(const char* filename, Product catalog[]);
 void saveProducts(const char* filename, Product catalog[], int count);
 void updateStock(Product catalog[], int index, int quantity);
-void displayStock(Product catalog[], int count);
+void displayProducts(Product catalog[], int count);
 
 
 #endif
