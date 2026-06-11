@@ -31,13 +31,27 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="admin.c">
+			<Option compilerVar="CC" />
+			<Option target="Debug" />
+		</Unit>
+		<Unit filename="admin.h">
+			<Option target="Debug" />
+		</Unit>
+		<Unit filename="customer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="customer.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="order.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="order.h" />
 		<Unit filename="product.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="product.csv" />
 		<Unit filename="product.h" />
 		<Extensions>
 			<lib_finder disable_auto="1" />

@@ -11,3 +11,48 @@
 	<string.h>
 	<stdlib.h>
 
+1781126119 source:c:\users\krisha\delivery_system\main.c
+	<stdio.h>
+	<stdlib.h>
+	"product.h"
+	"order.h"
+	"customer.h"
+	"admin.h"
+
+1781118062 c:\users\krisha\delivery_system\product.h
+
+1781118062 c:\users\krisha\delivery_system\order.h
+	"product.h"
+
+1781118062 c:\users\krisha\delivery_system\customer.h
+	"product.h"
+	"order.h"
+
+1781118062 source:c:\users\krisha\delivery_system\product.c
+	"product.h"
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+
+1781174632 c:\users\krisha\delivery_system\admin.h
+	"order.h"
+
+1781118062 source:c:\users\krisha\delivery_system\order.c
+	"order.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
+1781118062 source:c:\users\krisha\delivery_system\customer.c
+	"customer.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
+1781174433 source:c:\users\krisha\delivery_system\admin.c
+	"admin.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<time.h>
+

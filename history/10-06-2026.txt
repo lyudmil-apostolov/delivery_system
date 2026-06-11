@@ -1,0 +1,4 @@
+Order #1 | Address: troyes | Total: 1230.00 EUR
+Order #3 | Address: lyon | Total: 200.00 EUR
+Order #2 | Address: paris | Total: 200.00 EUR
+Order #4 | Address: troyes | Total: 20.00 EUR

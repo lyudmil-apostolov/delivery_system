@@ -1,0 +1,15 @@
+========================================
+  E-Commerce Delivery - Daily Report
+  Date         : 10-06-2026
+  Generated at : 23:21:43
+========================================
+
+  No delivery history file found for today.
+
+--- Summary ---
+  Total deliveries : 0
+  Total revenue    : 0.00 EUR
+
+========================================
+  End of Report
+========================================
