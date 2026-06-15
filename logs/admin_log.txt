@@ -13,3 +13,6 @@
 [15-06-2026 13:38:12] Cancelled Order #1
 [15-06-2026 13:38:12] Viewed statistics
 [15-06-2026 13:38:12] Admin logged out
+[15-06-2026 13:58:00] Admin logged in
+[15-06-2026 13:58:33] Restocked "The_Fellowship_Of_The_Ring" +20 (total: 45)
+[15-06-2026 13:58:56] Admin logged out
