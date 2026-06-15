@@ -4,11 +4,7 @@
 #include "order.h"
 #include "customer.h"
 #include "admin.h"
-
-static void flushInput(void) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
-}
+#include "utils.h"
 
 int main(void) {
     Product catalog[MAX_PRODUCTS];
@@ -44,7 +40,9 @@ int main(void) {
                 runCustomerMode(catalog, productCount, &q1, &q2);
                 break;
             case 2:
-                runAdminMode(&q1, &q2);
+                /* Pass catalog and &productCount so admin can manage products
+                   and restore stock when orders are cancelled. */
+                runAdminMode(&q1, &q2, catalog, &productCount);
                 break;
             case 3:
                 printf("\nSaving stock to file...\n");

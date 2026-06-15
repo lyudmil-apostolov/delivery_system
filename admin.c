@@ -1,14 +1,11 @@
 #include "admin.h"
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-/* clear leftover input from stdin */
-static void flushInput(void) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
-}
+/* ── Time helpers ───────────────────────────────────────────────────── */
 
 /* get today's filename like 10-06-2026.txt */
 static void getTodayFilename(char* result, size_t size) {
@@ -24,6 +21,8 @@ static void getCurrentTime(char* result, size_t size) {
     strftime(result, size, "%H:%M:%S", t);
 }
 
+/* ── Logging ────────────────────────────────────────────────────────── */
+
 /* write every admin action to admin_log.txt with timestamp */
 static void logAction(const char* msg) {
     FILE* log = fopen("logs/admin_log.txt", "a");
@@ -33,13 +32,15 @@ static void logAction(const char* msg) {
     char dateStr[30];
     getCurrentTime(timeNow, sizeof(timeNow));
     getTodayFilename(dateStr, sizeof(dateStr));
-    dateStr[strlen(dateStr) - 4] = '\0';
+    dateStr[strlen(dateStr) - 4] = '\0'; /* strip ".txt" */
 
     fprintf(log, "[%s %s] %s\n", dateStr, timeNow, msg);
     fclose(log);
 }
 
-/* save delivered order to DD-MM-YYYY.txt */
+/* ── History / report helpers ───────────────────────────────────────── */
+
+/* save delivered order to history/DD-MM-YYYY.txt */
 static void saveToHistory(const Order* o) {
     char fname[30];
     getTodayFilename(fname, sizeof(fname));
@@ -56,7 +57,9 @@ static void saveToHistory(const Order* o) {
     printf("  [Saved] Order #%d written to %s\n", o->id, fname);
 }
 
-/* take one order from a queue and deliver it */
+/* ── Delivery processing ────────────────────────────────────────────── */
+
+/* dequeue one order, record it, and free it */
 static void deliverOne(Queue* q, const char* name,
                         int* count, float* revenue) {
     Order* o = dequeue(q);
@@ -94,11 +97,9 @@ static void processDeliveries(Queue* q1, Queue* q2,
     printf("\n--- Processing Deliveries ---\n");
 
     if (isEmpty(q1)) {
-        /* no high priority orders, use normal instead */
         printf("  High priority queue empty. Taking from normal...\n");
         deliverOne(q2, "Normal", count, revenue);
     } else if (isEmpty(q2)) {
-        /* no normal orders, use high priority instead */
         printf("  Normal queue empty. Taking from high priority...\n");
         deliverOne(q1, "High", count, revenue);
     } else {
@@ -120,7 +121,8 @@ static void processDeliveries(Queue* q1, Queue* q2,
     logAction("Processed delivery cycle");
 }
 
-/* show total deliveries, revenue and average */
+/* ── Statistics ─────────────────────────────────────────────────────── */
+
 static void showStats(int count, float revenue,
                        const Queue* q1, const Queue* q2) {
     printf("\n===== Statistics =====\n");
@@ -138,6 +140,8 @@ static void showStats(int count, float revenue,
 
     logAction("Viewed statistics");
 }
+
+/* ── History / log viewers ──────────────────────────────────────────── */
 
 /* print today's history file to screen */
 static void viewHistory(void) {
@@ -198,7 +202,7 @@ static void exportReport(int count, float revenue) {
     fprintf(rep, "========================================\n\n");
 
     if (hist == NULL) {
-        fprintf(rep, "  No deliveries recorded today.\n\n");
+        fprintf(rep, "  No delivery history file found for today.\n\n");
     } else {
         fprintf(rep, "--- Orders Delivered ---\n");
         char line[256];
@@ -226,69 +230,6 @@ static void exportReport(int count, float revenue) {
     logAction("Exported daily report");
 }
 
-/* remove a specific order by ID from a queue */
-static int removeFromQueue(Queue* q, int id, const char* name) {
-    if (isEmpty(q)) return 0;
-
-    /* use a temp queue to rebuild without the cancelled order */
-    Queue temp;
-    temp.front = NULL;
-    temp.rear  = NULL;
-    temp.size  = 0;
-
-    int found = 0;
-    while (!isEmpty(q)) {
-        Order* o = dequeue(q);
-        if (o->id == id && !found) {
-            printf("\n  Cancelled: Order #%d from %s queue\n", o->id, name);
-            printf("    Address : %s\n", o->address);
-            printf("    Total   : %.2f EUR\n", o->total);
-            free(o);
-            found = 1;
-        } else {
-            enqueue(&temp, o);
-        }
-    }
-
-    /* put everything back */
-    while (!isEmpty(&temp)) {
-        Order* o = dequeue(&temp);
-        enqueue(q, o);
-    }
-
-    return found;
-}
-
-static void cancelOrder(Queue* q1, Queue* q2) {
-    printQueue(q1, "High Priority");
-    printQueue(q2, "Normal Priority");
-
-    if (isEmpty(q1) && isEmpty(q2)) {
-        printf("\n  No pending orders to cancel.\n");
-        return;
-    }
-
-    int id;
-    printf("\nEnter Order ID to cancel: ");
-    if (scanf("%d", &id) != 1) {
-        flushInput();
-        printf("  Invalid input.\n");
-        return;
-    }
-    flushInput();
-
-    int found = removeFromQueue(q1, id, "High");
-    if (!found) found = removeFromQueue(q2, id, "Normal");
-
-    if (!found) {
-        printf("  Order #%d not found.\n", id);
-    } else {
-        char entry[80];
-        snprintf(entry, sizeof(entry), "Cancelled Order #%d", id);
-        logAction(entry);
-    }
-}
-
 /* show the admin activity log on screen */
 static void viewLog(void) {
     FILE* f = fopen("logs/admin_log.txt", "r");
@@ -306,12 +247,232 @@ static void viewLog(void) {
     fclose(f);
 }
 
-/* password check before entering admin mode */
+/* ── Order cancellation (with stock restoration) ────────────────────── */
+
+/* Search for order ID in a queue; if found, restore its stock to the
+   catalogue and free it.  Returns 1 if found, 0 otherwise. */
+static int removeFromQueue(Queue* q, int id, const char* name,
+                            Product catalog[]) {
+    if (isEmpty(q)) return 0;
+
+    /* Drain into a temp queue, free only the matching node */
+    Queue temp;
+    temp.front = NULL;
+    temp.rear  = NULL;
+    temp.size  = 0;
+
+    int found = 0;
+    while (!isEmpty(q)) {
+        Order* o = dequeue(q);
+        if (o->id == id && !found) {
+            printf("\n  Cancelled: Order #%d from %s queue\n", o->id, name);
+            printf("    Address : %s\n", o->address);
+            printf("    Total   : %.2f EUR\n", o->total);
+
+            /* Restore stock for every item in the cancelled order */
+            for (int i = 0; i < o->itemCount; i++) {
+                int pi = o->items[i].productIndex;
+                if (catalog[pi].stock != -1) {      /* skip unlimited items */
+                    catalog[pi].stock += o->items[i].quantity;
+                }
+            }
+            printf("    Stock restored for %d item type(s).\n", o->itemCount);
+
+            free(o);
+            found = 1;
+        } else {
+            enqueue(&temp, o);
+        }
+    }
+
+    /* Put all remaining orders back */
+    while (!isEmpty(&temp)) {
+        Order* o = dequeue(&temp);
+        enqueue(q, o);
+    }
+
+    return found;
+}
+
+static void cancelOrder(Queue* q1, Queue* q2, Product catalog[]) {
+    printQueue(q1, "High Priority");
+    printQueue(q2, "Normal Priority");
+
+    if (isEmpty(q1) && isEmpty(q2)) {
+        printf("\n  No pending orders to cancel.\n");
+        return;
+    }
+
+    int id;
+    printf("\nEnter Order ID to cancel: ");
+    if (scanf("%d", &id) != 1) {
+        flushInput();
+        printf("  Invalid input.\n");
+        return;
+    }
+    flushInput();
+
+    int found = removeFromQueue(q1, id, "High",   catalog);
+    if (!found)
+        found  = removeFromQueue(q2, id, "Normal", catalog);
+
+    if (!found) {
+        printf("  Order #%d not found.\n", id);
+    } else {
+        char entry[80];
+        snprintf(entry, sizeof(entry), "Cancelled Order #%d", id);
+        logAction(entry);
+    }
+}
+
+/* ── Product management ─────────────────────────────────────────────── */
+
+/* Increase the stock of an existing product */
+static void restockProduct(Product catalog[], int productCount) {
+    if (productCount == 0) {
+        printf("  No products in catalogue.\n");
+        return;
+    }
+    displayProducts(catalog, productCount);
+
+    int num;
+    printf("Enter product number to restock (1-%d): ", productCount);
+    if (scanf("%d", &num) != 1) { flushInput(); return; }
+    flushInput();
+
+    if (num < 1 || num > productCount) {
+        printf("  Invalid product number.\n");
+        return;
+    }
+
+    int pi = num - 1;
+    if (catalog[pi].stock == -1) {
+        printf("  \"%s\" has unlimited stock — no restock needed.\n",
+               catalog[pi].name);
+        return;
+    }
+
+    printf("  Current stock of \"%s\": %d\n",
+           catalog[pi].name, catalog[pi].stock);
+    printf("  Quantity to add: ");
+    int qty;
+    if (scanf("%d", &qty) != 1 || qty <= 0) {
+        printf("  Invalid quantity.\n");
+        flushInput();
+        return;
+    }
+    flushInput();
+
+    catalog[pi].stock += qty;
+    printf("  \"%s\" restocked. New stock: %d\n",
+           catalog[pi].name, catalog[pi].stock);
+
+    char entry[120];
+    snprintf(entry, sizeof(entry),
+             "Restocked \"%s\" +%d (total: %d)",
+             catalog[pi].name, qty, catalog[pi].stock);
+    logAction(entry);
+}
+
+/* Add a brand-new product to the in-memory catalogue */
+static void addProduct(Product catalog[], int* productCount) {
+    if (*productCount >= MAX_PRODUCTS) {
+        printf("  Catalogue is full (max %d products).\n", MAX_PRODUCTS);
+        return;
+    }
+
+    Product p;
+
+    printf("  Product name   : ");
+    if (fgets(p.name, sizeof(p.name), stdin) == NULL) return;
+    p.name[strcspn(p.name, "\n")] = '\0';
+    if (strlen(p.name) == 0) {
+        printf("  Name cannot be empty.\n");
+        return;
+    }
+
+    printf("  Category       : ");
+    if (fgets(p.category, sizeof(p.category), stdin) == NULL) return;
+    p.category[strcspn(p.category, "\n")] = '\0';
+    if (strlen(p.category) == 0) {
+        printf("  Category cannot be empty.\n");
+        return;
+    }
+
+    printf("  Price (EUR)    : ");
+    if (scanf("%f", &p.price) != 1 || p.price < 0.0f) {
+        printf("  Invalid price.\n");
+        flushInput();
+        return;
+    }
+    flushInput();
+
+    printf("  Initial stock (-1 = unlimited): ");
+    if (scanf("%d", &p.stock) != 1 || p.stock < -1) {
+        printf("  Invalid stock value.\n");
+        flushInput();
+        return;
+    }
+    flushInput();
+
+    catalog[*productCount] = p;
+    (*productCount)++;
+
+    printf("  Product \"%s\" added (catalogue now has %d items).\n",
+           p.name, *productCount);
+
+    char entry[120];
+    snprintf(entry, sizeof(entry),
+             "Added product \"%s\" (%.2f EUR, stock: %d)",
+             p.name, p.price, p.stock);
+    logAction(entry);
+}
+
+/* Mark a product as discontinued (sets stock to 0) */
+static void discontinueProduct(Product catalog[], int productCount) {
+    if (productCount == 0) {
+        printf("  No products in catalogue.\n");
+        return;
+    }
+    displayProducts(catalog, productCount);
+
+    int num;
+    printf("Enter product number to discontinue (1-%d): ", productCount);
+    if (scanf("%d", &num) != 1) { flushInput(); return; }
+    flushInput();
+
+    if (num < 1 || num > productCount) {
+        printf("  Invalid product number.\n");
+        return;
+    }
+
+    int pi = num - 1;
+    char ch;
+    printf("  Discontinue \"%s\"? (y/n): ", catalog[pi].name);
+    if (scanf(" %c", &ch) != 1) { flushInput(); return; }
+    flushInput();
+
+    if (ch != 'y' && ch != 'Y') {
+        printf("  Cancelled.\n");
+        return;
+    }
+
+    catalog[pi].stock = 0;
+    printf("  \"%s\" is now discontinued (stock set to 0).\n",
+           catalog[pi].name);
+
+    char entry[100];
+    snprintf(entry, sizeof(entry),
+             "Discontinued product \"%s\"", catalog[pi].name);
+    logAction(entry);
+}
+
+/* ── Authentication ─────────────────────────────────────────────────── */
+
 static int login(void) {
     printf("\n=== Admin Login ===\n");
 
-    int i;
-    for (i = 1; i <= MAX_LOGIN_TRIES; i++) {
+    for (int i = 1; i <= MAX_LOGIN_TRIES; i++) {
         char input[50];
         printf("  Password (%d/%d): ", i, MAX_LOGIN_TRIES);
         if (fgets(input, sizeof(input), stdin) == NULL) continue;
@@ -330,8 +491,10 @@ static int login(void) {
     return 0;
 }
 
-/* main admin menu */
-void runAdminMode(Queue* q1, Queue* q2) {
+/* ── Main admin entry point ─────────────────────────────────────────── */
+
+void runAdminMode(Queue* q1, Queue* q2,
+                  Product catalog[], int* productCount) {
     if (!login()) return;
 
     static int   totalDone = 0;
@@ -343,14 +506,17 @@ void runAdminMode(Queue* q1, Queue* q2) {
         printf("  High priority pending  : %d\n", q1->size);
         printf("  Normal priority pending: %d\n", q2->size);
         printf("\n");
-        printf("  1. Process deliveries\n");
-        printf("  2. View queues\n");
-        printf("  3. View statistics\n");
-        printf("  4. View today's history\n");
-        printf("  5. Cancel an order\n");
-        printf("  6. Export daily report\n");
-        printf("  7. View admin log\n");
-        printf("  0. Back to main menu\n");
+        printf("  1.  Process deliveries\n");
+        printf("  2.  View queues\n");
+        printf("  3.  View statistics\n");
+        printf("  4.  View today's history\n");
+        printf("  5.  Cancel an order\n");
+        printf("  6.  Export daily report\n");
+        printf("  7.  View admin log\n");
+        printf("  8.  Restock a product\n");
+        printf("  9.  Add a new product\n");
+        printf("  10. Discontinue a product\n");
+        printf("  0.  Back to main menu\n");
         printf("Your choice: ");
 
         if (scanf("%d", &choice) != 1) {
@@ -361,22 +527,26 @@ void runAdminMode(Queue* q1, Queue* q2) {
         flushInput();
 
         switch (choice) {
-            case 1: processDeliveries(q1, q2, &totalDone, &totalRev); break;
+            case 1:  processDeliveries(q1, q2, &totalDone, &totalRev);  break;
             case 2:
                 printQueue(q1, "High Priority");
                 printQueue(q2, "Normal Priority");
                 logAction("Viewed queues");
                 break;
-            case 3: showStats(totalDone, totalRev, q1, q2); break;
-            case 4: viewHistory(); break;
-            case 5: cancelOrder(q1, q2); break;
-            case 6: exportReport(totalDone, totalRev); break;
-            case 7: viewLog(); break;
+            case 3:  showStats(totalDone, totalRev, q1, q2);            break;
+            case 4:  viewHistory();                                       break;
+            case 5:  cancelOrder(q1, q2, catalog);                       break;
+            case 6:  exportReport(totalDone, totalRev);                  break;
+            case 7:  viewLog();                                           break;
+            case 8:  restockProduct(catalog, *productCount);             break;
+            case 9:  addProduct(catalog, productCount);                  break;
+            case 10: discontinueProduct(catalog, *productCount);         break;
             case 0:
                 printf("Returning to main menu...\n");
                 logAction("Admin logged out");
                 break;
-            default: printf("Invalid option.\n");
+            default:
+                printf("Invalid option.\n");
         }
     } while (choice != 0);
 }

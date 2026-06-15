@@ -7,7 +7,7 @@
 CC      = gcc
 CFLAGS  = -Wall -Wextra -std=c11 -g
 TARGET  = delivery_system
-SRCS    = main.c product.c order.c customer.c
+SRCS    = main.c product.c order.c customer.c admin.c utils.c
 OBJS    = $(SRCS:.c=.o)
 
 .PHONY: all run clean
