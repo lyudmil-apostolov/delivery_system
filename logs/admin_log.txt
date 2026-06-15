@@ -16,3 +16,15 @@
 [15-06-2026 13:58:00] Admin logged in
 [15-06-2026 13:58:33] Restocked "The_Fellowship_Of_The_Ring" +20 (total: 45)
 [15-06-2026 13:58:56] Admin logged out
+[15-06-2026 15:42:15] Admin logged in
+[15-06-2026 15:42:15] Viewed queues
+[15-06-2026 15:42:15] Cancelled Order #2
+[15-06-2026 15:42:15] Delivered Order #1 | 123 Main Street Paris | 1200.00 EUR
+[15-06-2026 15:42:15] Processed delivery cycle
+[15-06-2026 15:42:15] Viewed statistics
+[15-06-2026 15:42:15] Viewed history file
+[15-06-2026 15:42:15] Exported daily report
+[15-06-2026 15:42:15] Restocked "Gaming_Headset" +6 (total: 20)
+[15-06-2026 15:42:15] Added product "TestProduct" (9.99 EUR, stock: 5)
+[15-06-2026 15:42:15] Discontinued product "Laptop_2"
+[15-06-2026 15:42:15] Admin logged out

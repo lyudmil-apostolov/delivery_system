@@ -1,27 +1,67 @@
 Electronics
-Laptop_1, 1200.00, 1
-Laptop_2, 600.00, 10
+Laptop_1, 1200.00, 0
+Laptop_2, 600.00, 0
 Smartphone_1, 200.00, 20
 Smartphone_2, 800.00, 10
 Headphones_1, 250.00, 15
 Headphones_2, 30.00, -1
+Tablet_1, 350.00, 12
+Smart_Watch_1, 180.00, 18
+USB_Hub, 25.00, -1
 
 Clothing
 Tshirt_1, 20.00, 30
 Jeans_1, 50.00, 15
+Hoodie_1, 45.00, 20
+Jacket_1, 90.00, 10
+Shorts_1, 25.00, 35
+Dress_1, 60.00, 12
 
 Food
 Chocolate, 3.00, 100
 Coffee, 5.00, -1
+Green_Tea, 4.00, -1
+Protein_Bar, 2.50, 80
+Instant_Noodles, 1.50, 150
 
 Sports
 Yoga_Mat, 25.00, 20
 Sunglasses, 15.00, 30
 Running_Shoes, 80.00, 12
 Water_Bottle, 10.00, -1
+Dumbbell_Set, 55.00, 8
+Jump_Rope, 8.00, 40
 
 Books
 Roadside_Picnic, 35.00, 10
 Norwegian_Wood, 12.00, -1
 The_C_Programming_Language, 40.00, 8
 The_Fellowship_Of_The_Ring, 15.00, 25
+Dune, 14.00, 20
+Harry_Potter_1, 10.00, -1
+
+Home_Kitchen
+Coffee_Maker, 45.00, 15
+Blender, 35.00, 20
+Cutting_Board, 12.00, 50
+Stainless_Steel_Pan, 28.00, 25
+Electric_Kettle, 22.00, -1
+Toaster, 30.00, 18
+Microwave, 85.00, 6
+Kitchen_Scale, 15.00, 30
+
+Beauty_Health
+Vitamin_C_Supplement, 15.00, 60
+Sunscreen_SPF50, 12.00, 40
+Face_Moisturizer, 18.00, 35
+Electric_Toothbrush, 45.00, 20
+Shampoo, 8.00, -1
+Lip_Balm, 4.00, -1
+Hand_Cream, 6.00, 50
+
+Gaming
+Gaming_Mouse, 55.00, 22
+Mechanical_Keyboard, 120.00, 10
+Gaming_Headset, 75.00, 14
+Controller, 60.00, 16
+Mouse_Pad_XL, 20.00, -1
